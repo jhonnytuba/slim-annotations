@@ -1,5 +1,5 @@
 <?php
-namespace SlimAnnotation\Rest;
+namespace SlimAnnotation\Mapping;
 
 use \Slim\Slim;
 
