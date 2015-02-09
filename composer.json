@@ -1,0 +1,20 @@
+{
+	"name": "jhonnytuba/slim-annotations",
+    "description": "Slim framework using annotations",
+    "keywords": ["slim", "annotation"],
+    "homepage": "https://github.com/jhonnytuba/slim-annotations",
+    "type": "library",
+    "license": "MIT",
+    "authors": [{
+        "name": "Jhonatan Serafim",
+        "email": "jhonnytuba@gmail.com"
+    }],
+    "require": {
+        "php": ">=5.3.0",
+		"doctrine/annotations": "~1.2",
+		"doctrine/common": "~2.4"
+    },
+    "autoload": {
+        "psr-0": {"SlimAnnotation": "src/"}
+    }
+}
