@@ -3,7 +3,7 @@ namespace SlimAnnotation\Mapping\Annotation;
 
 /**
  * @Annotation
- * @Target("CLASS")
+ * @Target({"CLASS","METHOD","ANNOTATION"})
  */
 final class Path {
 	
