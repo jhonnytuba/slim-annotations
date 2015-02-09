@@ -28,7 +28,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 	private function loadMetadataForClass($className, ClassMetadata $metadata) {
 	}
 	
-	public function loadAnnotationsForApp() {
+	public function runAnnotationsForApp() {
 		$app = new Slim();
 		
 		foreach ($this->getAllClassNames() as $className) {
@@ -45,6 +45,8 @@ class SlimAnnotationDriver extends AnnotationDriver {
 				$this->loadPath($app, $class, $classAnnotations['SlimAnnotation\Mapping\Annotation\Path']);
 			}
 		}
+		
+		$app->run();
 	}
 	
 	private function loadApplicationPath(Slim $app, ApplicationPath $classAnnotation) {
@@ -133,11 +135,9 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		return $methodAnnotations;
 	}
 	
-	public static function newInstance($namespaces=array(), $paths=array()) {
+	public static function newInstance($paths=array()) {
 		$reader = new SimpleAnnotationReader();
-		foreach ($namespaces as $namespace) {
-			$reader->addNamespace($namespace);
-		}
+		$reader->addNamespace('SlimAnnotation\Mapping\Annotation');
 		$cachedReader = new CachedReader($reader, new ArrayCache());
 		
 		AnnotationRegistry::registerFile(__DIR__ . '/SlimAnnotations.php');
