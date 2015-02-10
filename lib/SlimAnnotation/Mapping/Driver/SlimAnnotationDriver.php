@@ -21,11 +21,11 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		'SlimAnnotation\Mapping\Annotation\Middleware' => 3,
 	);
 	
-	private function __construct($reader, $paths = null) {
+	public function __construct($reader, $paths = null) {
 		parent::__construct($reader, $paths);
 	}
 	
-	private function loadMetadataForClass($className, ClassMetadata $metadata) {
+	public function loadMetadataForClass($className, ClassMetadata $metadata) {
 	}
 	
 	public function runAnnotationsForApp() {
@@ -141,7 +141,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		$cachedReader = new CachedReader($reader, new ArrayCache());
 		
 		AnnotationRegistry::registerFile(__DIR__ . '/SlimAnnotations.php');
-		return new RestDriver($cachedReader, $paths);
+		return new SlimAnnotationDriver($cachedReader, $paths);
 	}
 	
 }
