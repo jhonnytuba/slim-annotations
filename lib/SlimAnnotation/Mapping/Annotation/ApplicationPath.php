@@ -3,10 +3,10 @@ namespace SlimAnnotation\Mapping\Annotation;
 
 /**
  * @Annotation
- * @Target("CLASS")
+ * @Target({"CLASS","ANNOTATION"})
  */
 final class ApplicationPath {
 	
-	public $responseContentType;
+	public $responseContentType;// = "application/json;charset=utf-8";
 	
 }
