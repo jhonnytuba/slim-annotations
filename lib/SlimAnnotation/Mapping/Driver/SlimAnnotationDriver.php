@@ -81,7 +81,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		}
 	}
 	
-	private function normalizeURI($uriClass, Path $pathAnnotation) {
+	private function normalizeURI($uriClass, Path $pathAnnotation=null) {
 		$uri = $uriClass;
 		
 		if (substr($uri, 0, 1) != '/') {
