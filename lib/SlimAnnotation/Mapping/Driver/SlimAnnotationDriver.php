@@ -62,7 +62,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 	private function loadPath(Slim $app, ReflectionClass $class, Path $pathAnnotation) {
 		foreach ($class->getMethods() as $method) {
 			$instanceClass = $class->newInstance($app);
-			$methodAnnotations = getMethodAnnotations($method);
+			$methodAnnotations = $this->getMethodAnnotations($method);
 				
 			$uri = $this->normalizeURI($pathAnnotation->uri, $methodAnnotations['SlimAnnotation\Mapping\Annotation\Path']);
 			
@@ -81,7 +81,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		}
 	}
 	
-	private function normalizeURI($uriClass, $uriMethod) {
+	private function normalizeURI($uriClass, Path $pathAnnotation) {
 		$uri = $uriClass;
 		
 		if (substr($uri, 0, 1) != '/') {
@@ -92,7 +92,9 @@ class SlimAnnotationDriver extends AnnotationDriver {
 			$uri .= '/';
 		}
 		
-		if ($uriMethod) {
+		if (isset($pathAnnotation) && $pathAnnotation->uri) {
+			$uriMethod = $pathAnnotation->uri;
+			
 			if (substr($uriMethod, 0, 1) == '/') {
 				$uri .= substr($uriMethod, 1);
 			}
