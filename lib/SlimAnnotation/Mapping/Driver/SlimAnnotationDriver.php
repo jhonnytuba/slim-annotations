@@ -1,11 +1,6 @@
 <?php
 namespace SlimAnnotation\Mapping\Driver;
 
-use \ReflectionClass;
-use \ReflectionMethod;
-use \ReflectionProperty;
-use \Doctrine\Common\Persistence\Mapping\Driver\AnnotationDriver;
-use \Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use \Doctrine\Common\Annotations\SimpleAnnotationReader;
 use \Doctrine\Common\Annotations\CachedReader;
 use \Doctrine\Common\Annotations\AnnotationRegistry;
@@ -13,34 +8,42 @@ use \Doctrine\Common\Cache\ArrayCache;
 use \Slim\Slim;
 use \SlimAnnotation\Mapping\Annotation\ApplicationPath;
 use \SlimAnnotation\Mapping\Annotation\Path;
+use \SlimAnnotation\Mapping\Exception\MappingException;
 
-class SlimAnnotationDriver extends AnnotationDriver {
+class SlimAnnotationDriver {
 	
-	protected $entityAnnotationClasses = array(
-		'SlimAnnotation\Mapping\Annotation\ApplicationPath' => 1,
-		'SlimAnnotation\Mapping\Annotation\Path' => 2,
-		'SlimAnnotation\Mapping\Annotation\Middleware' => 3,
-	);
+	protected $reader;
+	protected $paths;
+	protected $excludePaths;
+	protected $fileExtension;
+	protected $classNames;
+	protected $entityAnnotationClasses;
 	
-	public function __construct($reader, $paths = null) {
-		parent::__construct($reader, $paths);
-	}
-	
-	public function loadMetadataForClass($className, ClassMetadata $metadata) {
+	public function __construct($reader, $paths=array(), $excludePaths=array()) {
+		$this->reader = $reader;
+		$this->paths = $paths;
+		$this->excludePaths = $excludePaths;
+		
+		$this->fileExtension = '.php';
+		$this->entityAnnotationClasses = array(
+				'SlimAnnotation\Mapping\Annotation\ApplicationPath' => 1,
+				'SlimAnnotation\Mapping\Annotation\Path' => 2,
+				'SlimAnnotation\Mapping\Annotation\Middleware' => 3,
+		);
 	}
 	
 	public function createAppWithAnnotations() {
 		$app = new Slim();
 		
 		foreach ($this->getAllClassNames() as $className) {
-			$class = new ReflectionClass($className);
+			$class = new \ReflectionClass($className);
 			$this->loadClassAnnotations($app, $class);
 		}
 		
 		return $app;
 	}
 	
-	private function loadClassAnnotations(Slim $app, ReflectionClass $class) {
+	private function loadClassAnnotations(Slim $app, \ReflectionClass $class) {
 		$classAnnotations = $this->getClassAnnotations($class);
 		$newInstanceClass = $class->newInstance();
 			
@@ -71,13 +74,13 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		$app->add($newInstanceClass);
 	}
 	
-	private function loadPath(Slim $app, ReflectionClass $class, $newInstanceClass, Path $pathAnnotation) {
+	private function loadPath(Slim $app, \ReflectionClass $class, $newInstanceClass, Path $pathAnnotation) {
 		foreach ($class->getMethods() as $method) {
 			$this->loadMethodAnnotations($app, $method, $newInstanceClass, $pathAnnotation->uri);
 		}
 	}
 	
-	private function loadMethodAnnotations(Slim $app, ReflectionMethod $method, $newInstanceClass, $uri) {
+	private function loadMethodAnnotations(Slim $app, \ReflectionMethod $method, $newInstanceClass, $uri) {
 		$methodAnnotations = $this->getMethodAnnotations($method);
 		
 		$uriMethod = '';
@@ -104,7 +107,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		}
 	}
 	
-	private function loadAttributesAnnotations(Slim $app, ReflectionClass $class, $newInstanceClass) {
+	private function loadAttributesAnnotations(Slim $app, \ReflectionClass $class, $newInstanceClass) {
 		foreach ($class->getProperties() as $property) {
 			$propertyAnnotations = $this->getPropertyAnnotations($property);
 			$inject = null;
@@ -150,7 +153,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		return $uri;
 	}
 	
-	private function getClassAnnotations(ReflectionClass $class) {
+	private function getClassAnnotations(\ReflectionClass $class) {
 		$classAnnotations = $this->reader->getClassAnnotations($class);
 		if ($classAnnotations) {
 			foreach ($classAnnotations as $key => $annot) {
@@ -163,7 +166,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		return $classAnnotations;
 	}
 	
-	private function getMethodAnnotations(ReflectionMethod $method) {
+	private function getMethodAnnotations(\ReflectionMethod $method) {
 		$methodAnnotations = $this->reader->getMethodAnnotations($method);
 		foreach ($methodAnnotations as $key => $annot) {
 			if ( ! is_numeric($key)) {
@@ -174,7 +177,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		return $methodAnnotations;
 	}
 	
-	private function getPropertyAnnotations(ReflectionProperty $property) {
+	private function getPropertyAnnotations(\ReflectionProperty $property) {
 		$propertyAnnotations = $this->reader->getPropertyAnnotations($property);
 		foreach ($propertyAnnotations as $key => $annot) {
 			if ( ! is_numeric($key)) {
@@ -185,13 +188,87 @@ class SlimAnnotationDriver extends AnnotationDriver {
 		return $propertyAnnotations;
 	}
 	
-	public static function newInstance($paths=array()) {
+	private function isTransient($className) {
+		$classAnnotations = $this->reader->getClassAnnotations(new \ReflectionClass($className));
+	
+		foreach ($classAnnotations as $annot) {
+			if (isset($this->entityAnnotationClasses[get_class($annot)])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+    private function getAllClassNames() {
+        if ($this->classNames !== null) {
+            return $this->classNames;
+        }
+
+        if (!$this->paths) {
+            throw MappingException::pathRequired();
+        }
+
+        $classes = array();
+        $includedFiles = array();
+
+        foreach ($this->paths as $path) {
+            if (!is_dir($path)) {
+                throw MappingException::fileMappingDriversRequireConfiguredDirectoryPath($path);
+            }
+
+            $iterator = new \RegexIterator(
+                new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                ),
+                '/^.+' . preg_quote($this->fileExtension) . '$/i',
+                \RecursiveRegexIterator::GET_MATCH
+            );
+
+            foreach ($iterator as $file) {
+                $sourceFile = $file[0];
+
+                if (!preg_match('(^phar:)i', $sourceFile)) {
+                    $sourceFile = realpath($sourceFile);
+                }
+
+                foreach ($this->excludePaths as $excludePath) {
+                    $exclude = str_replace('\\', '/', realpath($excludePath));
+                    $current = str_replace('\\', '/', $sourceFile);
+
+                    if (strpos($current, $exclude) !== false) {
+                        continue 2;
+                    }
+                }
+
+                require_once $sourceFile;
+
+                $includedFiles[] = $sourceFile;
+            }
+        }
+
+        $declared = get_declared_classes();
+
+        foreach ($declared as $className) {
+            $rc = new \ReflectionClass($className);
+            $sourceFile = $rc->getFileName();
+            if (in_array($sourceFile, $includedFiles) && !$this->isTransient($className)) {
+                $classes[] = $className;
+            }
+        }
+
+        $this->classNames = $classes;
+
+        return $classes;
+    }
+	
+	public static function newInstance($paths=array(), $excludePaths=array()) {
 		$reader = new SimpleAnnotationReader();
 		$reader->addNamespace('SlimAnnotation\Mapping\Annotation');
 		$cachedReader = new CachedReader($reader, new ArrayCache());
 		
 		AnnotationRegistry::registerFile(__DIR__ . '/SlimAnnotations.php');
-		return new SlimAnnotationDriver($cachedReader, $paths);
+		return new SlimAnnotationDriver($cachedReader, $paths, $excludePaths);
 	}
 	
 }
