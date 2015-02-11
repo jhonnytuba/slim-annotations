@@ -18,14 +18,14 @@ class UserPath {
 		return function() {
 			$users = array();
 			$users[] = [
-					'codigo' => 1,
-					'nome' => 'Jhonatan Serafim',
+					'id' => 1,
+					'name' => 'Jhonatan Serafim',
 					'email' => 'jhonnytuba@gmail.com',
 			];
 			$users[] = [
-					'codigo' => 2,
-					'nome' => 'John',
-					'email' => 'john@slim-annotatios.com',
+					'id' => 2,
+					'name' => 'Jhonatan',
+					'email' => 'jhonatanserafim@hotmail.com',
 			];
 			
 			$this->response->setBody(json_encode($users));
@@ -34,13 +34,13 @@ class UserPath {
 	
 	/**
 	  @GET
-	  @Path(":codigo")
+	  @Path(":id")
 	*/
 	public function getUser() {
-		return function($codigo) {
+		return function($id) {
 			$user = [
-					'codigo' => $codigo,
-					'nome' => 'Jhonatan Serafim',
+					'id' => $id,
+					'name' => 'Jhonatan Serafim',
 					'email' => 'jhonnytuba@gmail.com',
 			];
 			

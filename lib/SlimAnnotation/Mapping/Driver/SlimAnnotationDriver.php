@@ -29,7 +29,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 	public function loadMetadataForClass($className, ClassMetadata $metadata) {
 	}
 	
-	public function runAnnotations() {
+	public function createAppWithAnnotations() {
 		$app = new Slim();
 		
 		foreach ($this->getAllClassNames() as $className) {
@@ -37,7 +37,7 @@ class SlimAnnotationDriver extends AnnotationDriver {
 			$this->loadClassAnnotations($app, $class);
 		}
 		
-		$app->run();
+		return $app;
 	}
 	
 	private function loadClassAnnotations(Slim $app, ReflectionClass $class) {

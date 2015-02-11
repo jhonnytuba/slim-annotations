@@ -15,12 +15,12 @@ class BookPath {
 		return function() {
 			$books = array();
 			$books[] = [
-					'codigo' => 1,
-					'nome' => 'One',
+					'id' => 1,
+					'name' => 'One',
 			];
 			$books[] = [
-					'codigo' => 2,
-					'nome' => 'Two',
+					'id' => 2,
+					'name' => 'Two',
 			];
 			
 			$this->response->setBody(json_encode($books));
