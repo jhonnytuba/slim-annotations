@@ -4,4 +4,4 @@ Through excellent framework Slim, I decided to create annotations that can facil
 For example usage, please see the demos directory.
 
 To install, use the composer:
-composer require #jhonnytuba/slim-annotations
+#####composer require jhonnytuba/slim-annotations
